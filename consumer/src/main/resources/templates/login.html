@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="../jquery-easyui-1.5/jquery.min.js"></script>
+    <script src="../jquery-easyui-1.5/jquery.easyui.min.js"></script>
+    <script src="../jquery-easyui-1.5/locale/easyui-lang-zh_CN.js"></script>
+    <link rel="stylesheet" href="../jquery-easyui-1.5/themes/default/easyui.css">
+    <link rel="stylesheet" href="../jquery-easyui-1.5/themes/icon.css">
+
+
+</head>
+<body>
+<!--登录-->
+    <div id="login" class="easyui-dialog"  data-options="closed:false,width:'500',height:'300',buttons:[{
+        text:'登录',
+        plain:true,
+        handler:function(){
+            login();
+        }
+    },
+    {
+        text:'注册',
+        plain:true,
+        handler:function(){
+            registerlog();
+        }
+        }
+
+    ]">
+        <form id="loginform" method="post">
+            <table>
+                <tr>
+                    <td>账户</td>
+                    <td> <input name="usname" class="easyui-linkbutton"  ></td>
+                </tr>
+                <tr>
+                    <td>密码</td>
+                    <td> <input name="uspass" class="easyui-linkbutton"  ></td>
+                </tr>
+                <tr>
+                    <td>验证码</td>
+                    <td> 
+                        <input name="code" class="easyui-linkbutton"  >
+                        <img src="../verificationCode"  onclick="findcode()"  id="code">
+                    </td>
+                </tr>
+            </table>
+
+        </form>
+
+    </div>
+
+
+
+    <!--注册-->
+    <div  id="register" class="easyui-dialog"  data-options="closed:true,width:'500',height:'300',buttons:[{
+        text:'登录',
+        plain:true,
+        handler:function(){
+            find();
+        }
+    },{
+        text:'注册',
+        plain:true,
+        handler:function(){
+            register();
+        }
+        }
+
+    ]">
+        <form id="registerform" method="post">
+            <table>
+                <tr>
+                    <td>账户</td>
+                    <td> <input name="usname" class="easyui-linkbutton"  ></td>
+                </tr>
+                <tr>
+                    <td>密码</td>
+                    <td> <input name="uspass" class="easyui-linkbutton"  ></td>
+                </tr>
+            </table>
+        </form>
+
+    </div>
+</body>
+<script>
+    //验证码
+    function  findcode(){
+        $("#code").attr("src","../verificationCode?a="+new Date().getTime());
+    }
+    //登录
+    function  login(){
+        $("#loginform").form("submit",{
+            url:'../user/login',
+            success:function(data){
+                data=JSON.parse(data);
+                $.messager.alert("提示",data.msg,"info",function(){
+                    if(data.code==0){
+                        sessionStorage.setItem("loginName",data.loginName);
+                        location.href="../page/toMain";
+                    }
+                });
+            }
+        })
+    }
+//注册
+    function  register(){
+        $("#loginform").form("submit",{
+            url:'../user/register',
+            success:function(data){
+                data=JSON.parse(data);
+                $.messager.alert("提示",data.msg,"info",function(){
+                    if(data.code==0){
+                        location.href="../page/login";
+                    }
+                });
+            }
+        })
+    }
+
+    //注册
+    function  registerlog(){
+
+        $("#login").dialog("close",true);
+        $("#register").dialog("open");
+    }
+
+    //登录页面
+    function  find(){
+        $("#login").dialog("open");
+        $("#register").dialog("close",true);
+    }
+</script>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    #container {width:500px; height: 300px; }
+</style>
+
+
+
+
+<body>
+<div id="container"></div>
+</body>
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=baf7188590d06eb6c836fd56387aa054"></script>
+<script>
+
+    var map = new AMap.Map('container');
+    var map = new AMap.Map('container', { resizeEnable: true })
+    var map = new AMap.Map('container', { pitch:75,viewMode:'3D' });
+
+    // 构造点标记
+    var marker = new AMap.Marker({
+        icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+        position: [116.405467, 39.907761]
+    });
+    // 构造矢量圆形
+    var circle = new AMap.Circle({
+        center: new AMap.LngLat("116.403322", "39.920255"), // 圆心位置
+        radius: 1000,  //半径
+        strokeColor: "#F33",  //线颜色
+        strokeOpacity: 1,  //线透明度
+        strokeWeight: 3,  //线粗细度
+        fillColor: "#ee2200",  //填充颜色
+        fillOpacity: 0.35 //填充透明度
+    });
+
+    // 将以上覆盖物添加到地图上
+    // 单独将点标记添加到地图上
+    map.add(marker);
+    // add方法可以传入一个覆盖物数组，将点标记和矢量圆同时添加到地图上
+    map.add([marker,circle]);
+
+
+
+</script>
+
+
+</html>

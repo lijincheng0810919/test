@@ -1,0 +1,4 @@
+com\jk\model\RoleBean.class
+com\jk\model\UserBean.class
+com\jk\model\DictionaryBean.class
+com\jk\service\UserService.class

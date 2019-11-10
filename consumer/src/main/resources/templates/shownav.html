@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- 引入jquery.js文件 -->
+    <script type="text/javascript" src="../jquery-easyui-1.5/jquery.min.js"></script>
+    <!-- 引入easyui的js文件 -->
+    <script type="text/javascript" src="../jquery-easyui-1.5/jquery.easyui.min.js"></script>
+    <!-- 引入easyui的中文js文件 -->
+    <script type="text/javascript" src="../jquery-easyui-1.5/locale/easyui-lang-zh_CN.js"></script>
+    <!-- 引入easyui的css文件 -->
+    <link rel="stylesheet" href="../jquery-easyui-1.5/themes/default/easyui.css">
+    <!-- 引入easyui图标的css文件 -->
+    <link rel="stylesheet" href="../jquery-easyui-1.5/themes/icon.css">
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <div data-options="region:'west',title:'角色列表',width:300">
+        <div id="tools">
+            <a shiro:hasPermission="user:addPower"  href="javascript:openAdd()" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">新增</a>
+        </div>
+        <!-- 定义角色表格 -->
+        <table id="roleTable"></table>
+    </div>
+    <div data-options="region:'center',title:'权限列表'">
+        <!-- 定义面板 -->
+        <div class="easyui-panel" data-options="footer:'#footer',fit:true">
+            <!-- 隐藏域：放角色的id -->
+            <input id="roleId" style="display:none">
+            <!-- 定义权限树 -->
+            <ul id="powerTree"></ul>
+        </div>
+        <!-- 定义面板按钮 -->
+        <div id="footer" style="text-align:right">
+            <a shiro:hasPermission="user:saveRolePower" href="javascript:saveRolePower()" class="easyui-linkbutton" data-options="iconCls:'icon-ok',plain:true">保存</a>
+        </div>
+
+        <!--右键菜单定义如下： -->
+        <div id="mm" class="easyui-menu" style="width:120px;">
+            <div shiro:hasPermission="user:addPower" onclick="append()" data-options="iconCls:'icon-add'">新增</div>
+            <div shiro:hasPermission="user:deletePowerById" onclick="remove()" data-options="iconCls:'icon-remove'">删除</div>
+            <div shiro:hasPermission="user:updatePowerById" onclick="update()" data-options="iconCls:'icon-edit'">修改</div>
+        </div>
+        <!-- 新增权限的对话框 -->
+        <div id="poewrDialog" class="easyui-dialog" data-options="title:'新增权限',closed:true,width:300,height:200,modal:true,buttons:'#buttons'">
+            名称：<input class="easyui-textbox" id="mame"><br>
+            URL:<input class="easyui-textbox" id="url">
+        </div>
+        <!-- 定义对话框的按钮 -->
+        <div id="buttons">
+            <a href="javascript:savePower()" class="easyui-linkbutton" data-options="iconCls:'icon-ok',plain:true">确定</a>
+            <a href="javascript:closeDialog()" class="easyui-linkbutton" data-options="iconCls:'icon-cancel',plain:true">取消</a>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    $(function(){
+        initRoleTable();//初始化角色列表
+        initPowerTree(-1);//初始化权限树的数据
+        initMenuTable(-1);//初始化权限详细数据
+    })
+
+    //保存权限详细
+    function saveMenu(){
+        $("#menuForm").form("submit",{
+            url:"../user/saveMenu",
+            success:function(){
+                //关闭弹框
+                closeMenuDialog();
+                //刷新表格
+                initMenuTable($("#powerId").val());
+            }
+        })
+    }
+
+    //打开新增权限详细弹框
+    function openMenu(){
+        //判断一下有没有双击
+        var powerId = $("#powerId").val();
+        if(powerId!=null && powerId!=''){
+            //清除表单
+            $("#menuForm").form("reset");
+            $("#menuDialog").dialog("open");
+        }else{
+            $.messager.alert("提示","请先选择左侧的树节点","info");
+        }
+    }
+    //关闭新增权限详细弹框
+    function closeMenuDialog(){
+        $("#menuDialog").dialog("close");
+    }
+
+    //初始化权限树的数据
+    function initMenuTable(powerid){
+        $("#menuTable").datagrid({
+            url:"../user/queryMenu?powerid="+powerid,
+            columns:[
+                [{field:"checkbox",checkbox:true},
+                    {field:"mid",title:"id"},
+                    {field:"mname",title:"描述"},
+                    {field:"url",title:"url"},
+                    {field:"tool",title:"操作",formatter:function(value,row,index){
+                            var str = "<a href='javascript:openPower("+row.mid+")'>修改</a>";
+                            return str;
+                        }}
+                ]
+            ],
+            fit:true,
+            toolbar:"#menuTools"
+        })
+    }
+
+    //保存角色权限
+    function saveRolePower(){
+        //获取角色id
+        var roleid = $("#roleId").val();
+        //获取选中的和不确定的权限节点的id
+        var arr1 = $("#powerTree").tree("getChecked","checked");//获取选中的
+        var arr2 = $("#powerTree").tree("getChecked","indeterminate");//获取不确定的
+        var ids = "";
+        for(var i=0;i<arr1.length;i++){
+            ids+= ids==""?arr1[i].id:","+arr1[i].id;
+        }
+        for(var i=0;i<arr2.length;i++){
+            ids+= ids==""?arr2[i].id:","+arr2[i].id;
+        }
+        $.ajax({
+            url:"../user/saveRolePower",
+            type:"post",
+            data:{roleid:roleid,ids:ids},
+            success:function(){
+                //重新加载树
+                initPowerTree(roleid);//初始化权限树的数据
+                $.messager.alert("提示","修改成功!","info");
+            }
+        })
+
+    }
+
+    //角色赋权限：回显
+    function openPower(roleid){
+        //给角色的隐藏域赋值
+        $("#roleId").val(roleid);
+        initPowerTree(roleid);
+    }
+
+    //修改权限节点
+    function update(){
+        //获取右击选中的节点
+        var node = $('#powerTree').tree("getSelected");
+        $('#powerTree').tree("beginEdit",node.target);//开始编辑一个节点。
+    }
+
+    //保存权限
+    function savePower(){
+        var name = $("#powerName").textbox("getValue");
+        var url = $("#powerUrl").textbox("getValue");
+        //获取pid
+        var pid = $('#powerTree').tree("getSelected").id;
+        $.ajax({
+            url:"../user/addPower",
+            type:"post",
+            data:{text:name,url:url,pid:pid},
+            success:function(){
+                //关闭弹框
+                closeDialog();
+                //重新加载树
+                $('#powerTree').tree("reload");
+            }
+        })
+    }
+
+    //打开新增权限弹框
+    function append(){
+        $("#poewrDialog").dialog("open");
+    }
+
+    //关闭新增权限弹框
+    function closeDialog(){
+        $("#poewrDialog").dialog("close");
+    }
+
+    //删除权限节点
+    function remove(){
+        //获取当前选中的节点
+        var id = $('#powerTree').tree("getSelected").id;
+        //alert(id);
+        //删除
+        $.ajax({
+            url:"../user/deletePowerById",
+            type:"post",
+            data:{powerid:id},
+            success:function(){
+                //重新加载树
+                $('#powerTree').tree("reload");
+            }
+        })
+    }
+
+    //初始化权限树的数据
+    function initPowerTree(roleid){
+        $("#powerTree").tree({
+            url:"../user/queryPowerTree?roleid="+roleid,
+            checkbox:true,
+            onContextMenu:function(e, node){
+                e.preventDefault();//阻止浏览器默认的右击菜单
+                // 查找节点
+                $('#powerTree').tree('select', node.target);//选中当前右击的节点
+                // 显示快捷菜单
+                $('#mm').menu('show', {
+                    left: e.pageX,
+                    top: e.pageY
+                });
+            },
+            onAfterEdit:function(node){
+                //去后台修改节点
+                //alert(node.text);
+                $.ajax({
+                    url:"../user/updatePowerById",
+                    type:"post",
+                    data:{text:node.text,id:node.id},
+                    success:function(){
+                        //重新加载树
+                        $('#powerTree').tree("reload");
+                    }
+                })
+            },
+            onDblClick:function(node){
+                //给隐藏域赋值
+                $("#powerId").val(node.id);
+                initMenuTable(node.id);//初始化权限详细数据
+            }
+        })
+    }
+
+    //初始化角色列表
+    function initRoleTable(){
+        $("#roleTable").datagrid({
+            url:"../user/queryRole",
+            columns:[
+                [{field:"checkbox",checkbox:true},
+                    {field:"rid",title:"id"},
+                    {field:"rname",title:"角色名"},
+                    {field:"rinfo",title:"描述"},
+                    {field:"tool",title:"操作",formatter:function(value,row,index){
+                            var str = "<a  href='javascript:openPower("+row.rid+")'>赋权限</a>";
+                            return str;
+                        }}
+                ]
+            ],
+            fit:true,
+            toolbar:"#tools"
+        })
+    }
+</script>
+</html>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.jk.mapper.UserMapper">
+
+
+	<insert id="saveUser" parameterType="com.jk.model.UserModel">
+		insert into r_user(usname,uspass) values
+			<foreach collection="list" item="user" separator=",">
+				(#{user.usname},#{user.uspass})
+			</foreach>
+	</insert>
+
+
+
+    <select id="findPower" resultType="string" parameterType="int">
+		select t.permission from r_nav t
+			left join r_role_nav rp on t.id = rp.nid
+			left join r_role_user  ur on rp.rid = ur.rid
+			where  ur.usid =#{value} and t.permission is not null and t.permission!=''
+			group by t.id
+</select>
+
+    <select id="queryUser" resultType="com.jk.model.UserModel">
+       select  us.*,group_concat(r.rname) rname  from  r_user us left join r_role_user  ru  on  us.usid=ru.usid
+       LEFT JOIN  r_role  r  ON  r.rid=ru.rid 	group by us.usid limit #{start},#{end}
+    </select>
+    <insert id="saveMenu" parameterType="com.jk.model.MenuBean">
+		insert into r_menu(mname,url,nid) values(#{name},#{url},#{nid})
+	</insert>
+
+    <!-- 查询权限详细 -->
+    <select id="queryMenu" resultType="com.jk.model.MenuBean" parameterType="int">
+		select * from r_menu where nid=#{powerid}
+	</select>
+
+    <select id="queryPowerTreeByRoleid" parameterType="int" resultType="com.jk.model.TreeModel">
+		select n.* from r_nav n left join r_role_nav rp on n.id = rp.nid
+			where rp.rid=#{roleid}
+	</select>
+
+    <select id="queryRole" resultType="com.jk.model.RoleBean">
+		select * from r_role
+	</select>
+
+    <!-- 删除权限节点 -->
+    <delete id="deletePowerById" parameterType="int">
+		delete from r_nav where id = #{id}
+	</delete>
+
+    <!-- 新增权限节点 -->
+    <insert id="addPower" parameterType="com.jk.model.TreeModel">
+		insert into r_nav(name,url,pid) values(#{text},#{url},#{pid})
+	</insert>
+
+    <!-- 修改权限节点 -->
+    <update id="updatePowerById" parameterType="com.jk.model.TreeModel">
+		update r_nav t set t.name=#{text} where t.id =#{id}
+	</update>
+
+    <!-- 根据角色id删除角色权限中间表的数据 -->
+    <delete id="deleteByRoleid" parameterType="int">
+		delete from r_role_nav where rid=#{roleid}
+	</delete>
+
+    <!-- 批量新增角色权限中间表 -->
+    <insert id="addRolePower" >
+        insert into r_role_nav(rid,nid) values
+        <foreach collection="ids" item="powerid" separator=",">
+            (#{roleid},#{powerid})
+        </foreach>
+    </insert>
+
+    <!-- 新增用户 -->
+    <insert id="addUser" parameterType="com.jk.model.UserModel" useGeneratedKeys="true" keyProperty="usid">
+		insert into r_user(usname,uspass)
+		values(#{usname},#{uspass})
+	</insert>
+
+    <!-- 修改用户 -->
+    <update id="updateUser" parameterType="com.jk.model.UserModel">
+		update r_user u set u.usname=#{usname},u.uspass=#{uspass}
+		where u.usid=#{usid}
+	</update>
+
+    <!-- 根据用户id删除用户角色中间表数据 -->
+    <delete id="deleteUserRole" parameterType="int">
+		delete from r_role_user  where usid=#{usid}
+	</delete>
+
+    <!-- 批量新增：用户角色中间表
+	insert into t_user_role(userid,roleid) values(3,2),(3,1),(3,4),(3,5)   -->
+    <insert id="addUserRole" >
+        insert into r_role_user(usid,rid) values
+        <foreach collection="arrId" item="roleid" separator=",">
+            (#{usid},#{roleid})
+        </foreach>
+    </insert>
+    <!-- 修改：回显 -->
+    <select id="queryUserById" parameterType="int" resultType="com.jk.model.UserModel">
+		select u.usid,u.usname,u.uspass,group_concat(ur.rid) rid from r_user u
+			left join r_role_user ur on u.usid = ur.usid
+			 where u.usid=#{userId}
+			 group by u.usid
+	</select>
+
+	<select id="queryTreeByUsid" resultType="com.jk.model.TreeModel">
+		    select t.* from r_nav t
+			left join r_role_nav rp on t.id = rp.nid
+			left join r_role_user  ur on rp.rid = ur.rid
+			where t.pid=#{pid} and ur.usid = #{usid}  and  t.flag='menu'
+			group by t.id
+	</select>
+
+
+<!--    <insert id="addUser2" parameterType="com.jk.model.UserBean">
+        insert into t_student(name,pwd,age,sex,status)
+        value(#{name},#{pwd},#{age},#{sex},#{status})
+    </insert>-->
+</mapper>
